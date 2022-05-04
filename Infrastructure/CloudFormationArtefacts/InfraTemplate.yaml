@@ -1,0 +1,2972 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: General template
+
+Parameters:
+#######################################################
+# Tags Parameters
+#######################################################
+  Project: 
+    Description: Project name
+    Type: String
+    Default: "Dala"
+
+  CreatedBy: 
+    Description: Developer
+    Type: String
+    Default: "TsvetomirIvanov"
+
+  Environment: 
+    Description: "Environment type."
+    Type: String
+    Default: "Dev"
+    AllowedValues:
+      - Dev
+      - Prod
+    
+#######################################################    
+# Policy&role Parameters  
+#######################################################
+  ManagedPolicyArn:
+    Description: Managed Policy, Usage - ARN,  Default - AWSLambdaBasicExecutionRole
+    Type: String
+    Default: "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+
+  ManagedPolicyArn2:
+    Description: Managed Policy, Usage - ARN,  Default - AmazonDynamoDBFullAccess
+    Type: String
+    Default: "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"  
+
+  ManagedPolicyArn3:
+    Description: Managed Policy, Usage - ARN,  Default - AWSGlueServiceRole
+    Type: String
+    Default: "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
+    
+#######################################################      
+# Config Parameters
+#######################################################
+  ConfigS3KeyFuncCode:
+    Description: S3 Config S3Key Function Code
+    Type: String
+    Default: "dala-reusableFuncCode.zip"
+  ConfigS3RegisterScript:
+    Description: S3 Register Scripts 
+    Type: String
+    Default: "dala-s3-register-scripts.py"
+  ConfigS3LLookupScript:
+    Description: lookup script 
+    Type: String
+    Default: "dala-land-reusable-lookup-script.py"   
+  ConfigS3F41scheduleB1Script:
+    Description: F41scheduleB1 script 
+    Type: String
+    Default: "dala-land-f41scheduleb1-script.py"  
+  ConfigS3F41scheduleB43Script:
+    Description: F41scheduleB43 script 
+    Type: String
+    Default: "dala-land-f41scheduleb43-script.py"  
+  ConfigS3F41scheduleP51Script:
+    Description: F41scheduleP51 script 
+    Type: String
+    Default: "dala-land-f41schedulep51-script.py"  
+  ConfigS3T100MarketUsCarrierOnlyScript:
+    Description: T100MarketUsCarrierOnly script 
+    Type: String
+    Default: "dala-land-t100marketuscarrieronly-script.py"  
+  ConfigS3T100SegmentUsCarrierOnlyScript:
+    Description: T100SegmentUsCarrierOnly script 
+    Type: String
+    Default: "dala-land-t100segmentuscarrieronly-script.py"  
+  ConfigS3OntimeReportingScript:
+    Description: OntimeReporting script 
+    Type: String
+    Default: "dala-land-ontimereporting-script.py"  
+    
+#  ConfigS3KeyCrawlerFolders:
+#    Description: "S3 Config S3Key Crawler Folders - CommaDelimitedList Usage: (first,second,etc)"
+#    Type: CommaDelimitedList
+#    Default: "T_F41SCHEDULE_B1,T_F41SCHEDULE_B43,T_F41SCHEDULE_P51,T_T100_MARKET_US_CARRIER_ONLY,T_T100_SEGMENT_US_CARRIER_ONLY,T_ONTIME_REPORTING,L_AIRLINE_ID,L_UNIQUE_CARRIERS,L_CARRIER_HISTORY,L_UNIQUE_CARRIER_ENTITIES,L_REGION,L_CARRIER_GROUP_NEW,L_CARRIER_GROUP,L_OPERATING_STATUS,L_AIRCRAFT_STATUS,L_AIRCRAFT_TYPE,L_AIRCRAFT_GROUP,L_AIRCRAFT_CONFIG,L_QUARTERS,L_DATA_SOURCE,L_SERVICE_CLASS,L_DISTANCE_GROUP_500,L_MONTHS,L_WORLD_AREA_CODES,L_COUNTRY_CODE,L_STATE_FIPS,L_STATE_ABR_AVIATION,L_AIRPORT,L_CITY_MARKET_ID,L_AIRPORT_SEQ_ID,L_AIRPORT_ID,L_DIVERSIONS,L_DISTANCE_GROUP_250,L_CANCELLATION,L_DEPARRBLK,L_ONTIME_DELAY_GROUPS,L_YESNO_RESP,L_WEEKDAYS" 
+
+#######################################################    
+# Bucket Parameters
+#######################################################
+  ConfigBucketName:
+    Description: S3 Config Bucket name (lowercase)
+    Type: String
+    Default:  "dala-config-bucket" # REPLACE WITH YOUR CONFIG BUCKET
+ 
+  LandingBucketName:
+    Description: S3 Landing Bucket name (lowercase)
+    Type: String
+    Default: "dala-landing-layer"
+
+  RawBucketName:
+    Description: S3 Raw Bucket name (lowercase)
+    Type: String
+    Default: "dala-raw-layer"
+    
+  CuratedBucketName:
+    Description: S3 Curated Bucket name (lowercase)
+    Type: String
+    Default: "dala-curated-layer"
+
+#######################################################
+# Lambda Parameters
+#######################################################  
+  LandLogFuncName:
+    Description: Lambda func watching for s3 event
+    Type: String
+    Default: "dala-LandingLogFunc"
+
+  RawLogFuncName:
+    Description: Lambda func watching for s3 event
+    Type: String
+    Default: "dala-RawLogFunc"
+
+  CurtdLogFuncName:
+    Description: Lambda func watching for s3 event
+    Type: String
+    Default: "dala-CuratedLogFunc"
+
+#######################################################
+# DynamoDB Parameters 
+#######################################################   
+  DynamoDBName:
+    Description: DynamoDB Log Storage Name
+    Type: String
+    Default: "dala-EventLogs"
+
+#######################################################
+# Glue Parameters
+#######################################################
+#Glue Database
+  GlueLandDBName:
+    Description: Glue Landing Database Name (lowercase)
+    Type: String
+    Default: "dala-land-db"
+
+  GlueRawDBName:
+    Description: Glue Raw Database Name (lowercase)
+    Type: String
+    Default: "dala-raw-db"
+    
+#Glue Workflow names
+  GlueWorkflow:
+    Description: Glue Workflow Name (lowercase)
+    Type: String
+    Default: "dala-wf-land-to-raw"
+
+#Glue Classifier
+  GlueLandCSVClassifierName:
+    Description: Crawler name (lowercase)
+    Type: String
+    Default: "dala-land-csv"
+
+#Glue Crawler names
+  GlueLandCrawlerName:
+    Description: Crawler name (lowercase)
+    Type: String
+    Default: "dala-land-crawler"
+
+  GlueRawCrawlerName:
+    Description: Crawler name (lowercase)
+    Type: String
+    Default: "dala-raw-crawler"
+    
+#Glue Temporary direcotry
+  GlueTempDir:
+    Description: TempDir (lowercase)
+    Type: String
+    Default: "s3://aws-glue-temporary-[ACCOUNTID]-[REGION]/dala" # CREATE/REPLACE ACCOUNTID and REGION
+
+#Glue Job names
+  GlueJobS3LandRegName:
+    Description: Glue Job s3 landing register job (lowercase)
+    Type: String
+    Default: "s3land-register-job"
+    
+  GlueJobS3RawRegName:
+    Description: Glue Job s3 raw register job (lowercase)
+    Type: String
+    Default: "s3raw-register-job"
+
+#  GlueJobLookupName:
+#    Description: Glue Job s3 raw register job
+#    Type: String
+#    Default: "s3land-l_quarters-job"
+
+#######################################################
+# Source file Parameters
+#######################################################
+#Expected source file names
+  SrcFileF41scheduleB1:
+    Description: source file name (lowercase)
+    Type: String
+    Default: "t_f41schedule_b1"
+
+  SrcFileF41scheduleB43:
+    Description: source file name (lowercase)
+    Type: String
+    Default: "t_f41schedule_b43"
+
+  SrcFileF41scheduleP51:
+    Description: source file name (lowercase)
+    Type: String
+    Default: "t_f41schedule_p51"
+
+  SrcFileT100MarketUsCarrierOnly:
+    Description: source file name (lowercase)
+    Type: String
+    Default: "t_t100_market_us_carrier_only"
+    
+  SrcFileT100SegmentUsCarrierOnly:
+    Description: source file name (lowercase)
+    Type: String
+    Default: "t_t100_segment_us_carrier_only"
+
+  SrcFileOntimeReporting:
+    Description: source file name (lowercase)
+    Type: String
+    Default: "t_ontime_reporting"
+
+  SrcLookupFileAirlineId:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_airline_id"
+
+  SrcLookupFileUniqueCarriers:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_unique_carriers"    
+
+  SrcLookupFileCarrierHistory:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_carrier_history"
+
+  SrcLookupFileUniqueCarrierEntities:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_unique_carrier_entities" 
+
+  SrcLookupFileRegion:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_region"
+
+  SrcLookupFileCarrierGroupNew:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_carrier_group_new" 
+
+  SrcLookupFileCarrierGroup:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_carrier_group"
+
+  SrcLookupFileOperatingStatus:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_operating_status" 
+
+  SrcLookupFileAircraftStatus:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_aircraft_status"
+
+  SrcLookupFileAircraftType:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_aircraft_type"  
+
+  SrcLookupFileAircraftGroup:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_aircraft_group"
+
+  SrcLookupFileAircraftConfig:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_aircraft_config"    
+
+  SrcLookupFileQuarters:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_quarters"
+
+  SrcLookupFileDataSource:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_data_source" 
+
+  SrcLookupFileServiceClass:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_service_class"
+
+  SrcLookupFileDistanceGroup500:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_distance_group_500" 
+
+  SrcLookupFileMonths:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_months"
+
+  SrcLookupFileWorldAreaCodes:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_world_area_codes" 
+
+  SrcLookupFileCountryCode:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_country_code"
+
+  SrcLookupFileStateFips:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_state_fips" 
+
+  SrcLookupFileStateAbrAviation:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_state_abr_aviation"
+
+  SrcLookupFileAirport:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_airport"    
+
+  SrcLookupFileCityMarketId:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_city_market_id"
+
+  SrcLookupFileAirportSeqId:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_airport_seq_id" 
+
+  SrcLookupFileAirportId:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_airport_id"
+
+  SrcLookupFileDiversions:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_diversions" 
+
+  SrcLookupFileDistanceGroup250:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_distance_group_250"
+
+  SrcLookupFileCancellation:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_cancellation" 
+
+  SrcLookupFileDeparrblk:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_deparrblk"
+
+  SrcLookupFileOntimeDelayGroups:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_ontime_delay_groups" 
+
+  SrcLookupFileYesnoResp:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_yesno_resp"
+
+  SrcLookupFileWeekdays:
+    Description: lookup file name (lowercase)
+    Type: String
+    Default: "l_weekdays" 
+    
+Mappings:
+  MapEnv:
+    Dev:
+      rolename : DalaLambdaIAMRole-dev
+      rolename2: DalaGlueIAMRole-dev
+    Prod:
+      rolename : DalaLambdaIAMRole
+      rolename2: DalaGlueIAMRole
+
+Conditions:
+  IsProduction : !Equals
+    - !Ref Environment
+    - "Prod"
+   
+Resources:
+
+  DynamoDBLogStorage:
+      Type: AWS::DynamoDB::Table
+      Properties: 
+        TableName: !If
+          - IsProduction
+          - !Ref DynamoDBName
+          - !Sub ${DynamoDBName}-dev
+        AttributeDefinitions: 
+          - 
+            AttributeName: "requestId"
+            AttributeType: "S"
+        KeySchema: 
+          - 
+            AttributeName: "requestId"
+            KeyType: "HASH"          
+        BillingMode: PROVISIONED
+        ProvisionedThroughput: 
+          ReadCapacityUnits : 1
+          WriteCapacityUnits : 1
+        TableClass: STANDARD        
+        Tags: 
+          - Key: "project"
+            Value: !Ref Project
+          - Key: "createdby"
+            Value: !Ref CreatedBy
+          - Key: "environment"
+            Value: !Ref Environment
+          - Key: "type"
+            Value: "LogStorage"
+            
+  LambdaIAMRole:
+    Type: "AWS::IAM::Role"
+    DependsOn : DynamoDBLogStorage
+    Properties:
+      RoleName: !FindInMap
+        - MapEnv
+        - !Ref Environment
+        - rolename
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns: 
+        - !Ref ManagedPolicyArn
+        - !Ref ManagedPolicyArn2
+      Path: /
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:GetBucketNotificationConfiguration"
+                  - "s3:PutBucketNotificationConfiguration"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: 'arn:aws:logs:*:*:*' 
+      Tags: 
+        - Key: "project"
+          Value: !Ref Project
+        - Key: "createdby"
+          Value: !Ref CreatedBy
+        - Key: "environment"
+          Value: !Ref Environment
+  
+  LambdaFuncWatcher:
+    Type: "AWS::Lambda::Function"
+    DependsOn : LambdaIAMRole
+    Properties:
+      FunctionName: !If
+        - IsProduction
+        - !Ref LandLogFuncName
+        - !Sub ${LandLogFuncName}-dev
+      Handler: "index.lambda_handler"
+      Runtime: "python3.8"
+      MemorySize: 128
+      Timeout: 3
+      Role: !GetAtt LambdaIAMRole.Arn
+      Environment:
+        Variables:
+          DynDBTableName: !If
+            - IsProduction
+            - !Ref DynamoDBName
+            - !Sub ${DynamoDBName}-dev
+      Code:
+        S3Bucket : !Ref ConfigBucketName
+        S3Key : !Ref ConfigS3KeyFuncCode       
+      Tags: 
+        - Key: "project"
+          Value: !Ref Project
+        - Key: "createdby"
+          Value: !Ref CreatedBy
+        - Key: "environment"
+          Value: !Ref Environment
+        - Key: "Level"
+          Value: "L0"
+        - Key: "layer"
+          Value: "LandingLayer"      
+  
+  LambdaFuncWatcher2:
+    Type: "AWS::Lambda::Function"
+    DependsOn : LambdaIAMRole
+    Properties:
+      FunctionName: !If
+        - IsProduction
+        - !Ref RawLogFuncName
+        - !Sub ${RawLogFuncName}-dev
+      Handler: "index.lambda_handler"
+      Runtime: "python3.8"
+      MemorySize: 128
+      Timeout: 3
+      Role: !GetAtt LambdaIAMRole.Arn
+      Environment:
+        Variables:
+          DynDBTableName: !If
+            - IsProduction
+            - !Ref DynamoDBName
+            - !Sub ${DynamoDBName}-dev
+      Code:
+        S3Bucket : !Ref ConfigBucketName
+        S3Key : !Ref ConfigS3KeyFuncCode       
+      Tags: 
+        - Key: "project"
+          Value: !Ref Project
+        - Key: "createdby"
+          Value: !Ref CreatedBy
+        - Key: "environment"
+          Value: !Ref Environment
+        - Key: "Level"
+          Value: "L1"
+        - Key: "layer"
+          Value: "RawLayer"
+
+  LambdaFuncWatcher3:
+    Type: "AWS::Lambda::Function"
+    DependsOn : LambdaIAMRole
+    Properties:
+      FunctionName: !If
+        - IsProduction
+        - !Ref CurtdLogFuncName
+        - !Sub ${CurtdLogFuncName}-dev
+      Handler: "index.lambda_handler"
+      Runtime: "python3.8"
+      MemorySize: 128
+      Timeout: 3
+      Role: !GetAtt LambdaIAMRole.Arn
+      Environment:
+        Variables:
+          DynDBTableName: !If
+            - IsProduction
+            - !Ref DynamoDBName
+            - !Sub ${DynamoDBName}-dev
+      Code:
+        S3Bucket : !Ref ConfigBucketName
+        S3Key : !Ref ConfigS3KeyFuncCode       
+      Tags: 
+        - Key: "project"
+          Value: !Ref Project
+        - Key: "createdby"
+          Value: !Ref CreatedBy
+        - Key: "environment"
+          Value: !Ref Environment
+        - Key: "Level"
+          Value: "L2"
+        - Key: "layer"
+          Value: "CuratedLayer"
+ 
+  S3Permission:
+    Type: AWS::Lambda::Permission
+    DependsOn : LambdaFuncWatcher
+    Properties:
+      FunctionName: !GetAtt LambdaFuncWatcher.Arn
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+ 
+  S3Permission2:
+    Type: AWS::Lambda::Permission
+    DependsOn : LambdaFuncWatcher2
+    Properties:
+      FunctionName: !GetAtt LambdaFuncWatcher2.Arn
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+
+  S3Permission3:
+    Type: AWS::Lambda::Permission
+    DependsOn : LambdaFuncWatcher3
+    Properties:
+      FunctionName: !GetAtt LambdaFuncWatcher3.Arn
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      
+  S3BucketLanding: 
+    Type: "AWS::S3::Bucket"
+    DependsOn : S3Permission 
+    Properties:
+      BucketName: !If 
+        - IsProduction
+        - !Ref LandingBucketName
+        - !Sub ${LandingBucketName}-dev
+      NotificationConfiguration:  
+          LambdaConfigurations:
+              - Event: "s3:ObjectCreated:*"
+                Function: !GetAtt LambdaFuncWatcher.Arn
+              - Event: "s3:ObjectRemoved:*"
+                Function: !GetAtt LambdaFuncWatcher.Arn
+              - Event: "s3:ObjectRestore:*"
+                Function: !GetAtt LambdaFuncWatcher.Arn
+              - Event: "s3:ObjectAcl:Put"
+                Function: !GetAtt LambdaFuncWatcher.Arn
+              - Event: "s3:ObjectTagging:*"
+                Function: !GetAtt LambdaFuncWatcher.Arn
+              - Event: "s3:ReducedRedundancyLostObject"
+                Function: !GetAtt LambdaFuncWatcher.Arn
+              - Event: "s3:Replication:*"
+                Function: !GetAtt LambdaFuncWatcher.Arn
+              - Event: "s3:LifecycleTransition"
+                Function: !GetAtt LambdaFuncWatcher.Arn
+              - Event: "s3:LifecycleExpiration:*"
+                Function: !GetAtt LambdaFuncWatcher.Arn
+              - Event: "s3:IntelligentTiering"
+                Function: !GetAtt LambdaFuncWatcher.Arn
+      Tags: 
+        - Key: "project"
+          Value: !Ref Project
+        - Key: "createdby"
+          Value: !Ref CreatedBy
+        - Key: "environment"
+          Value: !Ref Environment
+        - Key: "Level"
+          Value: "L0"
+        - Key: "layer"
+          Value: "LandingLayer"
+
+  S3BucketRaw: 
+    Type: "AWS::S3::Bucket"
+    DependsOn : S3Permission2 
+    Properties:
+      BucketName: !If
+        - IsProduction
+        - !Ref RawBucketName
+        - !Sub ${RawBucketName}-dev
+      NotificationConfiguration:  
+          LambdaConfigurations:
+              - Event: "s3:ObjectCreated:*"
+                Function: !GetAtt LambdaFuncWatcher2.Arn
+              - Event: "s3:ObjectRemoved:*"
+                Function: !GetAtt LambdaFuncWatcher2.Arn
+              - Event: "s3:ObjectRestore:*"
+                Function: !GetAtt LambdaFuncWatcher2.Arn
+              - Event: "s3:ObjectAcl:Put"
+                Function: !GetAtt LambdaFuncWatcher2.Arn
+              - Event: "s3:ObjectTagging:*"
+                Function: !GetAtt LambdaFuncWatcher2.Arn
+              - Event: "s3:ReducedRedundancyLostObject"
+                Function: !GetAtt LambdaFuncWatcher2.Arn
+              - Event: "s3:Replication:*"
+                Function: !GetAtt LambdaFuncWatcher2.Arn
+              - Event: "s3:LifecycleTransition"
+                Function: !GetAtt LambdaFuncWatcher2.Arn
+              - Event: "s3:LifecycleExpiration:*"
+                Function: !GetAtt LambdaFuncWatcher2.Arn
+              - Event: "s3:IntelligentTiering"
+                Function: !GetAtt LambdaFuncWatcher2.Arn
+      Tags:
+        - Key: "project"
+          Value: !Ref Project      
+        - Key: "createdby"
+          Value: !Ref CreatedBy
+        - Key: "environment"
+          Value: !Ref Environment
+        - Key: "Level"
+          Value: "L1"
+        - Key: "layer"
+          Value: "RawLayer"
+
+  S3BucketCurated: 
+    Type: "AWS::S3::Bucket"
+    DependsOn : S3Permission3
+    Properties:
+      BucketName: !If 
+        - IsProduction
+        - !Ref CuratedBucketName
+        - !Sub ${CuratedBucketName}-dev        
+      NotificationConfiguration:  
+          LambdaConfigurations:
+              - Event: "s3:ObjectCreated:*"
+                Function: !GetAtt LambdaFuncWatcher3.Arn
+              - Event: "s3:ObjectRemoved:*"
+                Function: !GetAtt LambdaFuncWatcher3.Arn
+              - Event: "s3:ObjectRestore:*"
+                Function: !GetAtt LambdaFuncWatcher3.Arn
+              - Event: "s3:ObjectAcl:Put"
+                Function: !GetAtt LambdaFuncWatcher3.Arn
+              - Event: "s3:ObjectTagging:*"
+                Function: !GetAtt LambdaFuncWatcher3.Arn
+              - Event: "s3:ReducedRedundancyLostObject"
+                Function: !GetAtt LambdaFuncWatcher3.Arn
+              - Event: "s3:Replication:*"
+                Function: !GetAtt LambdaFuncWatcher3.Arn
+              - Event: "s3:LifecycleTransition"
+                Function: !GetAtt LambdaFuncWatcher3.Arn
+              - Event: "s3:LifecycleExpiration:*"
+                Function: !GetAtt LambdaFuncWatcher3.Arn
+              - Event: "s3:IntelligentTiering"
+                Function: !GetAtt LambdaFuncWatcher3.Arn
+      Tags: 
+        - Key: "project"
+          Value: !Ref Project
+        - Key: "createdby"
+          Value: !Ref CreatedBy
+        - Key: "environment"
+          Value: !Ref Environment
+        - Key: "Level"
+          Value: "L2"
+        - Key: "layer"
+          Value: "CuratedLayer"
+          
+#################################################################################
+########################## AWS GLUE RESOURCES ###################################
+
+  GlueIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !FindInMap
+        - MapEnv
+        - !Ref Environment
+        - rolename2
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "glue.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      ManagedPolicyArns: 
+        - !Ref ManagedPolicyArn3
+      Path: "/"
+      Policies:
+        -
+          PolicyName: "root"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:GetObject"
+                  - "s3:PutObject"
+                Resource: "*"
+              - Effect: Allow
+                Action: "*"
+                Resource: "*"
+      Tags: 
+        - Key: "project"
+          Value: !Ref Project
+        - Key: "createdby"
+          Value: !Ref CreatedBy
+        - Key: "environment"
+          Value: !Ref Environment
+          
+  GlueLandDatabase:
+      Type: AWS::Glue::Database
+      Properties:
+        CatalogId: !Ref AWS::AccountId   
+        DatabaseInput:
+          Name: !If 
+            - IsProduction
+            - !Ref GlueLandDBName
+            - !Sub ${GlueLandDBName}-dev	
+
+  GlueRawDatabase:
+      Type: AWS::Glue::Database
+      Properties:
+        CatalogId: !Ref AWS::AccountId   
+        DatabaseInput:
+          Name: !If 
+            - IsProduction
+            - !Ref GlueRawDBName
+            - !Sub ${GlueRawDBName}-dev
+          
+  GlueWF:
+    Type: AWS::Glue::Workflow
+    Properties: 
+#      DefaultRunProperties: Json
+      Description: Dala Workflow
+      Name: !If 
+        - IsProduction
+        - !Ref GlueWorkflow
+        - !Sub ${GlueWorkflow}-dev
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment" : !Ref Environment
+
+                         
+                         
+  GlueS3LandRegisterJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Ref GlueJobS3LandRegName
+              - !Sub ${GlueJobS3LandRegName}-dev
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "1.0"
+      Command:
+        Name: pythonshell
+        PythonVersion: 3
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3RegisterScript}"
+      DefaultArguments:
+        "--bucket_name": !If 
+          - IsProduction
+          - !Ref LandingBucketName
+          - !Sub ${LandingBucketName}-dev
+        "--folder_names": !Join 
+                            - ','
+                            - - !Ref SrcFileF41scheduleB1
+                              - !Ref SrcFileF41scheduleB43
+                              - !Ref SrcFileF41scheduleP51
+                              - !Ref SrcFileT100MarketUsCarrierOnly
+                              - !Ref SrcFileT100SegmentUsCarrierOnly
+                              - !Ref SrcFileOntimeReporting
+                              - !Ref SrcLookupFileAirlineId
+                              - !Ref SrcLookupFileUniqueCarriers
+                              - !Ref SrcLookupFileCarrierHistory
+                              - !Ref SrcLookupFileUniqueCarrierEntities
+                              - !Ref SrcLookupFileRegion
+                              - !Ref SrcLookupFileCarrierGroupNew
+                              - !Ref SrcLookupFileCarrierGroup
+                              - !Ref SrcLookupFileOperatingStatus
+                              - !Ref SrcLookupFileAircraftStatus
+                              - !Ref SrcLookupFileAircraftType
+                              - !Ref SrcLookupFileAircraftGroup
+                              - !Ref SrcLookupFileAircraftConfig
+                              - !Ref SrcLookupFileQuarters
+                              - !Ref SrcLookupFileDataSource
+                              - !Ref SrcLookupFileServiceClass
+                              - !Ref SrcLookupFileDistanceGroup500
+                              - !Ref SrcLookupFileMonths
+                              - !Ref SrcLookupFileWorldAreaCodes
+                              - !Ref SrcLookupFileCountryCode
+                              - !Ref SrcLookupFileStateFips
+                              - !Ref SrcLookupFileStateAbrAviation
+                              - !Ref SrcLookupFileAirport
+                              - !Ref SrcLookupFileCityMarketId
+                              - !Ref SrcLookupFileAirportSeqId
+                              - !Ref SrcLookupFileAirportId
+                              - !Ref SrcLookupFileDiversions
+                              - !Ref SrcLookupFileDistanceGroup250
+                              - !Ref SrcLookupFileCancellation
+                              - !Ref SrcLookupFileDeparrblk
+                              - !Ref SrcLookupFileOntimeDelayGroups
+                              - !Ref SrcLookupFileYesnoResp
+                              - !Ref SrcLookupFileWeekdays
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment" : !Ref Environment
+
+  GlueS3RawRegisterJob: 
+    Type: AWS::Glue::Job
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Ref GlueJobS3RawRegName
+              - !Sub ${GlueJobS3RawRegName}-dev
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "1.0"
+      Command:
+        Name: pythonshell
+        PythonVersion: 3
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3RegisterScript}"
+      DefaultArguments:
+        "--bucket_name": !If 
+          - IsProduction
+          - !Ref RawBucketName
+          - !Sub ${RawBucketName}-dev
+        "--folder_names": !Join 
+                            - ','
+                            - - !Ref SrcFileF41scheduleB1
+                              - !Ref SrcFileF41scheduleB43
+                              - !Ref SrcFileF41scheduleP51
+                              - !Ref SrcFileT100MarketUsCarrierOnly
+                              - !Ref SrcFileT100SegmentUsCarrierOnly
+                              - !Ref SrcFileOntimeReporting
+                              - !Ref SrcLookupFileAirlineId
+                              - !Ref SrcLookupFileUniqueCarriers
+                              - !Ref SrcLookupFileCarrierHistory
+                              - !Ref SrcLookupFileUniqueCarrierEntities
+                              - !Ref SrcLookupFileRegion
+                              - !Ref SrcLookupFileCarrierGroupNew
+                              - !Ref SrcLookupFileCarrierGroup
+                              - !Ref SrcLookupFileOperatingStatus
+                              - !Ref SrcLookupFileAircraftStatus
+                              - !Ref SrcLookupFileAircraftType
+                              - !Ref SrcLookupFileAircraftGroup
+                              - !Ref SrcLookupFileAircraftConfig
+                              - !Ref SrcLookupFileQuarters
+                              - !Ref SrcLookupFileDataSource
+                              - !Ref SrcLookupFileServiceClass
+                              - !Ref SrcLookupFileDistanceGroup500
+                              - !Ref SrcLookupFileMonths
+                              - !Ref SrcLookupFileWorldAreaCodes
+                              - !Ref SrcLookupFileCountryCode
+                              - !Ref SrcLookupFileStateFips
+                              - !Ref SrcLookupFileStateAbrAviation
+                              - !Ref SrcLookupFileAirport
+                              - !Ref SrcLookupFileCityMarketId
+                              - !Ref SrcLookupFileAirportSeqId
+                              - !Ref SrcLookupFileAirportId
+                              - !Ref SrcLookupFileDiversions
+                              - !Ref SrcLookupFileDistanceGroup250
+                              - !Ref SrcLookupFileCancellation
+                              - !Ref SrcLookupFileDeparrblk
+                              - !Ref SrcLookupFileOntimeDelayGroups
+                              - !Ref SrcLookupFileYesnoResp
+                              - !Ref SrcLookupFileWeekdays
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment" : !Ref Environment
+
+  GlueLandClassifier:
+    Type: AWS::Glue::Classifier
+    Properties: 
+      CsvClassifier: 
+        ContainsHeader: PRESENT
+        Delimiter: ','
+        Name: !If 
+                - IsProduction
+                - !Ref GlueLandCSVClassifierName
+                - !Sub ${GlueLandCSVClassifierName}-dev
+        QuoteSymbol: '"'
+
+    
+  GlueLandCrawler:
+    Type: AWS::Glue::Crawler
+    DependsOn : GlueS3LandRegisterJob
+    Properties: 
+      Classifiers:
+        - !Ref GlueLandClassifier
+      DatabaseName: !Ref GlueLandDatabase
+      Description: "Landing Crawler"
+      Name: !If 
+              - IsProduction
+              - !Ref GlueLandCrawlerName
+              - !Sub ${GlueLandCrawlerName}-dev
+      RecrawlPolicy: 
+        RecrawlBehavior: CRAWL_EVERYTHING
+      Role: !GetAtt GlueIAMRole.Arn
+      SchemaChangePolicy: 
+        UpdateBehavior: "UPDATE_IN_DATABASE"
+        DeleteBehavior: "DELETE_FROM_DATABASE"
+      TablePrefix: "land_"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment" : !Ref Environment
+      Targets: 
+         S3Targets:
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcFileF41scheduleB1
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcFileF41scheduleB43                    
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcFileF41scheduleP51
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcFileT100MarketUsCarrierOnly  
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcFileT100SegmentUsCarrierOnly
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcFileOntimeReporting                     
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileAirlineId
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileUniqueCarriers                          
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileCarrierHistory
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileUniqueCarrierEntities                    
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileRegion
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileCarrierGroupNew  
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileCarrierGroup
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileOperatingStatus                     
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileAircraftStatus
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileAircraftType                         
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileAircraftGroup
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileAircraftConfig                    
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileQuarters
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileDataSource 
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileServiceClass
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileDistanceGroup500                    
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileMonths
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileWorldAreaCodes                          
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileCountryCode
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileStateFips                     
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileStateAbrAviation
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileAirport  
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileCityMarketId
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileAirportSeqId                    
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileAirportId
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileDiversions                         
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileDistanceGroup250
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileCancellation                    
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileDeparrblk
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileOntimeDelayGroups  
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileYesnoResp
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref LandingBucketName
+                         - !Sub ${LandingBucketName}-dev
+                       - !Ref SrcLookupFileWeekdays                     
+                         
+  GlueRawCrawler:
+    Type: AWS::Glue::Crawler
+    DependsOn : GlueS3RawRegisterJob
+    Properties: 
+      DatabaseName: !Ref GlueRawDatabase
+      Description: "Raw Crawler"
+      Name: !If 
+              - IsProduction
+              - !Ref GlueRawCrawlerName
+              - !Sub ${GlueRawCrawlerName}-dev
+      RecrawlPolicy: 
+        RecrawlBehavior: CRAWL_EVERYTHING
+      Role: !GetAtt GlueIAMRole.Arn
+      SchemaChangePolicy: 
+        UpdateBehavior: "UPDATE_IN_DATABASE"
+        DeleteBehavior: "DELETE_FROM_DATABASE"
+      TablePrefix: "raw_"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment" : !Ref Environment
+      Targets: 
+         S3Targets:
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcFileF41scheduleB1
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcFileF41scheduleB43                    
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcFileF41scheduleP51
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcFileT100MarketUsCarrierOnly  
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcFileT100SegmentUsCarrierOnly
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcFileOntimeReporting                     
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileAirlineId
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileUniqueCarriers                          
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileCarrierHistory
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileUniqueCarrierEntities                    
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileRegion
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileCarrierGroupNew  
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileCarrierGroup
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileOperatingStatus                     
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileAircraftStatus
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileAircraftType                         
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileAircraftGroup
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileAircraftConfig                    
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileQuarters
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileDataSource 
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileServiceClass
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileDistanceGroup500                    
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileMonths
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileWorldAreaCodes                          
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileCountryCode
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileStateFips                     
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileStateAbrAviation
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileAirport  
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileCityMarketId
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileAirportSeqId                    
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileAirportId
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileDiversions                         
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileDistanceGroup250
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileCancellation                    
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileDeparrblk
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileOntimeDelayGroups  
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileYesnoResp
+           - Path: !Join
+                     - '/'
+                     - - 's3:/'
+                       - !If 
+                         - IsProduction
+                         - !Ref RawBucketName
+                         - !Sub ${RawBucketName}-dev
+                       - !Ref SrcLookupFileWeekdays                     
+                         
+                         
+
+  GlueS3LandLAirlineIdJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileAirlineId}-job'
+              - !Sub 's3land-${SrcLookupFileAirlineId}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileAirlineId
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags:
+        "project": !Ref Project      
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment
+
+  GlueS3LandLUniqueCarriersJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileUniqueCarriers}-job'
+              - !Sub 's3land-${SrcLookupFileUniqueCarriers}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileUniqueCarriers
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment
+
+  GlueS3LandLCarrierHistoryJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileCarrierHistory}-job'
+              - !Sub 's3land-${SrcLookupFileCarrierHistory}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileCarrierHistory
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment
+
+  GlueS3LandLUniqueCarrierEntitiesJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileUniqueCarrierEntities}-job'
+              - !Sub 's3land-${SrcLookupFileUniqueCarrierEntities}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileUniqueCarrierEntities
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment
+
+  GlueS3LandLRegionJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileRegion}-job'
+              - !Sub 's3land-${SrcLookupFileRegion}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileRegion
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment
+
+  GlueS3LandLCarrierGroupNewJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileCarrierGroupNew}-job'
+              - !Sub 's3land-${SrcLookupFileCarrierGroupNew}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileCarrierGroupNew
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment
+
+  GlueS3LandLCarrierGroupJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileCarrierGroup}-job'
+              - !Sub 's3land-${SrcLookupFileCarrierGroup}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileCarrierGroup
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment
+
+  GlueS3LandLOperatingStatusJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileOperatingStatus}-job'
+              - !Sub 's3land-${SrcLookupFileOperatingStatus}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileOperatingStatus
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment
+
+  GlueS3LandLAircraftStatusJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileAircraftStatus}-job'
+              - !Sub 's3land-${SrcLookupFileAircraftStatus}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileAircraftStatus
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment
+
+  GlueS3LandLAircraftTypeJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileAircraftType}-job'
+              - !Sub 's3land-${SrcLookupFileAircraftType}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileAircraftType
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment
+
+  GlueS3LandLAircraftGroupJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileAircraftGroup}-job'
+              - !Sub 's3land-${SrcLookupFileAircraftGroup}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileAircraftGroup
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment
+        
+  GlueS3LandLAircraftConfigJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileAircraftConfig}-job'
+              - !Sub 's3land-${SrcLookupFileAircraftConfig}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileAircraftConfig
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment        
+        
+  GlueS3LandLQuartersJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileQuarters}-job'
+              - !Sub 's3land-${SrcLookupFileQuarters}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileQuarters
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment        
+        
+  GlueS3LandLDataSourceJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileDataSource}-job'
+              - !Sub 's3land-${SrcLookupFileDataSource}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileDataSource
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment        
+        
+  GlueS3LandLServiceClassJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileServiceClass}-job'
+              - !Sub 's3land-${SrcLookupFileServiceClass}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileServiceClass
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment        
+        
+  GlueS3LandLDistanceGroup500Job: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileDistanceGroup500}-job'
+              - !Sub 's3land-${SrcLookupFileDistanceGroup500}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileDistanceGroup500
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment        
+        
+  GlueS3LandLMonthsJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileMonths}-job'
+              - !Sub 's3land-${SrcLookupFileMonths}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileMonths
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment        
+        
+  GlueS3LandLWorldAreaCodesJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileWorldAreaCodes}-job'
+              - !Sub 's3land-${SrcLookupFileWorldAreaCodes}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileWorldAreaCodes
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment        
+        
+  GlueS3LandLCountryCodeJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileCountryCode}-job'
+              - !Sub 's3land-${SrcLookupFileCountryCode}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileCountryCode
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment        
+        
+  GlueS3LandLStateFipsJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileStateFips}-job'
+              - !Sub 's3land-${SrcLookupFileStateFips}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileStateFips
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment        
+        
+  GlueS3LandLStateAbrAviationJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileStateAbrAviation}-job'
+              - !Sub 's3land-${SrcLookupFileStateAbrAviation}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileStateAbrAviation
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment 
+
+  GlueS3LandLAirportJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileAirport}-job'
+              - !Sub 's3land-${SrcLookupFileAirport}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileAirport
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment 
+
+  GlueS3LandLCityMarketIdJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileCityMarketId}-job'
+              - !Sub 's3land-${SrcLookupFileCityMarketId}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileCityMarketId
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment 
+
+  GlueS3LandLAirportSeqIdJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileAirportSeqId}-job'
+              - !Sub 's3land-${SrcLookupFileAirportSeqId}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileAirportSeqId
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment 
+
+  GlueS3LandLAirportIdJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileAirportId}-job'
+              - !Sub 's3land-${SrcLookupFileAirportId}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileAirportId
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment 
+
+  GlueS3LandLDiversionsJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileDiversions}-job'
+              - !Sub 's3land-${SrcLookupFileDiversions}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileDiversions
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment 
+
+  GlueS3LandLDistanceGroup250Job: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileDistanceGroup250}-job'
+              - !Sub 's3land-${SrcLookupFileDistanceGroup250}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileDistanceGroup250
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment 
+
+  GlueS3LandLCancellationJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileCancellation}-job'
+              - !Sub 's3land-${SrcLookupFileCancellation}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileCancellation
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment 
+
+  GlueS3LandLDeparrblkJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileDeparrblk}-job'
+              - !Sub 's3land-${SrcLookupFileDeparrblk}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileDeparrblk
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment 
+
+  GlueS3LandLOntimeDelayGroupsJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileOntimeDelayGroups}-job'
+              - !Sub 's3land-${SrcLookupFileOntimeDelayGroups}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileOntimeDelayGroups
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment 
+
+  GlueS3LandLYesnoRespJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileYesnoResp}-job'
+              - !Sub 's3land-${SrcLookupFileYesnoResp}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileYesnoResp
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment 
+
+  GlueS3LandLWeekdaysJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcLookupFileWeekdays}-job'
+              - !Sub 's3land-${SrcLookupFileWeekdays}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3LLookupScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--lookup_name": !Ref SrcLookupFileWeekdays
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment 
+        
+  GlueS3LandF41scheduleB1Job: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcFileF41scheduleB1}-job'
+              - !Sub 's3land-${SrcFileF41scheduleB1}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3F41scheduleB1Script}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--src_main_name": !Ref SrcFileF41scheduleB1
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment         
+
+        
+  GlueS3LandF41scheduleB43Job: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcFileF41scheduleB43}-job'
+              - !Sub 's3land-${SrcFileF41scheduleB43}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3F41scheduleB43Script}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--src_main_name": !Ref SrcFileF41scheduleB43
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment         
+        
+        
+        
+  GlueS3LandF41scheduleP51Job: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcFileF41scheduleP51}-job'
+              - !Sub 's3land-${SrcFileF41scheduleP51}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3F41scheduleP51Script}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--src_main_name": !Ref SrcFileF41scheduleP51
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment         
+        
+        
+  GlueS3LandT100MarketUsCarrierOnlyJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcFileT100MarketUsCarrierOnly}-job'
+              - !Sub 's3land-${SrcFileT100MarketUsCarrierOnly}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3T100MarketUsCarrierOnlyScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--src_main_name": !Ref SrcFileT100MarketUsCarrierOnly
+        "--lookup_name1": !Ref SrcFileT100SegmentUsCarrierOnly
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment         
+        
+        
+  GlueS3LandT100SegmentUsCarrierOnlyJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcFileT100SegmentUsCarrierOnly}-job'
+              - !Sub 's3land-${SrcFileT100SegmentUsCarrierOnly}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 2
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3T100SegmentUsCarrierOnlyScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--src_main_name": !Ref SrcFileT100SegmentUsCarrierOnly
+        "--lookup_name1": !Ref SrcFileT100MarketUsCarrierOnly
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment         
+        
+        
+  GlueS3LandOntimeReportingJob: 
+    Type: AWS::Glue::Job
+    DependsOn : GlueIAMRole
+    Properties:
+      Name: !If 
+              - IsProduction
+              - !Sub 's3land-${SrcFileOntimeReporting}-job'
+              - !Sub 's3land-${SrcFileOntimeReporting}-job-dev'
+      Role: !GetAtt GlueIAMRole.Arn
+      GlueVersion: "3.0"
+      NumberOfWorkers: 10
+      WorkerType: "G.1X"
+      Timeout: 10
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub "s3://${ConfigBucketName}/${ConfigS3OntimeReportingScript}"
+      DefaultArguments:
+        "--TempDir": !Ref GlueTempDir 
+        "--enable-metrics": ""
+        "--src_database": !If 
+                            - IsProduction
+                            - !Sub "${GlueLandDBName}"
+                            - !Sub "${GlueLandDBName}-dev"
+        "--src_main_name": !Ref SrcFileOntimeReporting
+        "--lookup_name1": !Ref SrcFileT100MarketUsCarrierOnly
+        "--lookup_name2": !Ref SrcFileT100SegmentUsCarrierOnly       
+        "--tgt_bucket": !If 
+                          - IsProduction
+                          - !Sub "${RawBucketName}"
+                          - !Sub "${RawBucketName}-dev"                     
+      Tags: 
+        "project": !Ref Project
+        "createdby": !Ref CreatedBy
+        "environment": !Ref Environment         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+      
+      
